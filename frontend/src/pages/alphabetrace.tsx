@@ -99,56 +99,46 @@ const AlphabetRace = () => {
     setTargetLetter(letter);
   };
 
-  const padBase64 = (base64) => {
-    const paddingNeeded = 4 - (base64.length % 4);
-    return paddingNeeded < 4 ? base64 + "=".repeat(paddingNeeded) : base64;
-  };
+  
+
+ 
 
   const handleCapture = async () => {
     if (gameStatus !== "running") return;
-
+  
     const video = document.querySelector("video");
     if (!video) return;
-
+  
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
+  
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageDataUrl = canvas.toDataURL("image/png");
     const base64Data = imageDataUrl.split(",")[1];
-    const paddedBase64 = padBase64(base64Data);
-
+    
+  
     setIsLoading(true);
-
+  
     try {
-      const requestBody = JSON.stringify({ image: paddedBase64 });
-      console.log("Request body:", requestBody);
-
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          body: JSON.stringify({
-            image_data: paddedBase64
-          })
-        }),
+        body: JSON.stringify({ image: base64Data }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
+  
       const data = await response.json();
       const receivedLetter = data.detectedLetter?.replace(/['"]/g, '').toUpperCase();
       setDetectedLetter(receivedLetter);
-
+      
+  
+      // Check if the detected letter matches the target letter
       if (receivedLetter === targetLetter) {
         toast.success("🏎️ Nitro Boost Activated!");
         activateNitro();
-        generateRandomLetter();
+        generateRandomLetter(); // Generate a new target letter after successful detection
       } else {
         toast.error("❌ Wrong Sign!");
       }
@@ -159,7 +149,6 @@ const AlphabetRace = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="container mx-auto p-4">
       <Toaster position="top-center" />
@@ -292,7 +281,15 @@ const AlphabetRace = () => {
           </Card>
         </div>
       </div>
+      {detectedLetter && (
+        <div className="mt-4 text-center">
+          <p className="text-lg">
+            Detected Letter: <span className="font-bold">{detectedLetter}</span>
+          </p>
+        </div>
+      )}
     </div>
+
   );
 };
 

@@ -40,43 +40,65 @@ const WordChallenge = () => {
 
   const handleCapture = async () => {
     if (!currentWord || gameCompleted) return;
-  
+
     const video = document.querySelector("video");
     if (!video) return;
-  
+
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-  
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageDataUrl = canvas.toDataURL("image/png");
-    const base64Data = imageDataUrl.split(",")[1]; // Extract base64 data
-    const paddedBase64 = padBase64(base64Data); // Ensure proper padding
-  console.log("beginmng",paddedBase64)
+    const base64Data = imageDataUrl.split(",")[1];
+    const paddedBase64 = padBase64(base64Data);
+
     setIsLoading(true);
     toast("Processing image...");
-  
+
     try {
-      // Send only the raw base64 string
+      const requestBody = JSON.stringify({ image: paddedBase64 });
+      console.log("Request body:", requestBody);
+
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: paddedBase64 }), // Send raw base64
+        body: JSON.stringify({ image: base64Data }), // Send to Node.js backend
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       const receivedLetter = data.detectedLetter?.replace(/['"]/g, '').toUpperCase();
       setDetectedLetter(receivedLetter);
-  
-      // ... rest of your logic ...
+
+      if (receivedLetter === currentLetter?.toUpperCase()) {
+        toast.success(`✅ Correct! Detected letter: ${receivedLetter}`);
+        
+        // Move to next letter or word
+        if (currentLetterIndex < currentWord.length - 1) {
+          setCurrentLetterIndex(prev => prev + 1);
+        } else {
+          // Word completed
+          if (currentWordIndex < selectedWords.length - 1) {
+            toast.success(`🎉 Word '${currentWord}' completed!`);
+            setCurrentWordIndex(prev => prev + 1);
+            setCurrentLetterIndex(0);
+          } else {
+            // Game completed
+            toast.success("🏆 Congratulations! All words completed!");
+            setGameCompleted(true);
+          }
+        }
+      } else {
+        toast.error(`❌ Incorrect! Expected ${currentLetter}`);
+      }
     } catch (error) {
-      console.error("Error processing image:", error);
+      console.error("Oops Try again!");
       toast.error("⚠️ Error processing image. Please try again.");
     } finally {
       setIsLoading(false);

@@ -20,46 +20,42 @@ export default function Study({ params }: { params: { letter: string } }) {
     return `/study/${ASL_ALPHABETS[nextIndex]}`;
   };
 
-
-
   const handleCapture = async () => {
     const video = document.querySelector("video");
     if (!video) return;
-  
+
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-  
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageDataUrl = canvas.toDataURL("image/png");
+    const imageDataUrl = canvas.toDataURL("image/png"); // Convert to Base64
+
+    // Extract the Base64 part (removing "data:image/png;base64,")
     const base64Data = imageDataUrl.split(",")[1];
-    const paddedBase64 = padBase64(base64Data);
-  
-    console.log("Sending image to server...");
+
+    console.log("Captured Image (Base64):", base64Data); // Log the Base64 data
     toast("Processing image...");
     setIsLoading(true);
-  
+
     try {
       const response = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image: paddedBase64
-        })
+        body: JSON.stringify({ image: base64Data }), // Send to Node.js backend
       });
-  
+
       const data = await response.json();
       console.log("Server Response:", data);
-  
-      const detectedLetter = data.detectedLetter.replace(/['"]+/g, "");
-      setDetectedLetter(detectedLetter);
-      
-      if (detectedLetter.toUpperCase() === letter.toUpperCase()) {
-        toast.success(`🎉 Success! You signed '${letter}' correctly!`);
+
+      setDetectedLetter(data.detectedLetter);
+
+      if (data.detectedLetter?.toUpperCase() === letter.toUpperCase()) {
+        toast.error(`❌ Oops! Try again.`);
       } else {
-        toast.error(`Try again! The detected letter was '${detectedLetter}'`);
+        toast.success(`🎉 Success! You signed '${letter}' correctly!`);
       }
     } catch (error) {
       console.error("Error processing image:", error);
@@ -68,6 +64,7 @@ export default function Study({ params }: { params: { letter: string } }) {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="container mx-auto p-4">
       <Toaster position="top-center" />
