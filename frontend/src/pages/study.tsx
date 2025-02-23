@@ -49,13 +49,14 @@ export default function Study({ params }: { params: { letter: string } }) {
 
       const data = await response.json();
       console.log("Server Response:", data);
+      const receivedLetter = data.detectedLetter?.replace(/['"]/g, '').toUpperCase();
+      setDetectedLetter(receivedLetter);
+      
 
-      setDetectedLetter(data.detectedLetter);
-
-      if (data.detectedLetter?.toUpperCase() === letter.toUpperCase()) {
-        toast.error(`❌ Oops! Try again.`);
-      } else {
+      if (receivedLetter?.toUpperCase() === letter.toUpperCase()) {
         toast.success(`🎉 Success! You signed '${letter}' correctly!`);
+      } else {
+          toast.error(`❌ Oops! Try again.`);
       }
     } catch (error) {
       console.error("Error processing image:", error);

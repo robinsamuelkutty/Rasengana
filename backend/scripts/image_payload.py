@@ -86,7 +86,7 @@ def invoke(input_file_path):
             return "Error: Could not process image"
 
         # Prepare API request
-        url = "http://192.168.35.1:8023/validate_body"
+        url = "http://192.168.150.1:8023/validate_body"
         payload = {
             "body": json.dumps({
                 "image_data": processed_base64
